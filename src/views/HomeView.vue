@@ -58,6 +58,14 @@ const games = [
     icon: '✹',
   },
   {
+    title: 'Path Zip',
+    description: 'Draw one continuous path through every cell while visiting numbers in order.',
+    status: 'Playable',
+    route: '/pathzip',
+    accent: 'violet',
+    icon: '1→',
+  },
+  {
     title: 'Memory Card',
     description: 'Flip the cards, find every pair, and test your visual memory.',
     status: 'Coming Soon',
@@ -107,7 +115,7 @@ const games = [
           <span class="section-heading__label">Game library</span>
           <h2>Pick your next challenge</h2>
         </div>
-        <p>Eight games ready to play. More classics are on the way.</p>
+        <p>Nine games ready to play. More classics are on the way.</p>
       </div>
 
       <div class="game-grid">

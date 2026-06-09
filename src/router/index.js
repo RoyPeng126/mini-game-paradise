@@ -8,6 +8,7 @@ import TetrisView from '../views/TetrisView.vue'
 import DinoView from '../views/DinoView.vue'
 import SlotView from '../views/SlotView.vue'
 import MinesweeperView from '../views/MinesweeperView.vue'
+import PathZipView from '../views/PathZipView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -56,6 +57,11 @@ const router = createRouter({
       path: '/minesweeper',
       name: 'minesweeper',
       component: MinesweeperView,
+    },
+    {
+      path: '/pathzip',
+      name: 'pathzip',
+      component: PathZipView,
     },
     {
       path: '/:pathMatch(.*)*',
