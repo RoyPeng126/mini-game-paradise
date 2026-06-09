@@ -52,7 +52,8 @@ const games = [
   {
     title: 'Minesweeper',
     description: 'Use logic to clear the field without triggering a hidden mine.',
-    status: 'Coming Soon',
+    status: 'Playable',
+    route: '/minesweeper',
     accent: 'orange',
     icon: '✹',
   },
@@ -106,7 +107,7 @@ const games = [
           <span class="section-heading__label">Game library</span>
           <h2>Pick your next challenge</h2>
         </div>
-        <p>Seven games ready to play. More classics are on the way.</p>
+        <p>Eight games ready to play. More classics are on the way.</p>
       </div>
 
       <div class="game-grid">

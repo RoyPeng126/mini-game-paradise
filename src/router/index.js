@@ -7,6 +7,7 @@ import MahjongView from '../views/MahjongView.vue'
 import TetrisView from '../views/TetrisView.vue'
 import DinoView from '../views/DinoView.vue'
 import SlotView from '../views/SlotView.vue'
+import MinesweeperView from '../views/MinesweeperView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,6 +51,11 @@ const router = createRouter({
       path: '/slot',
       name: 'slot',
       component: SlotView,
+    },
+    {
+      path: '/minesweeper',
+      name: 'minesweeper',
+      component: MinesweeperView,
     },
     {
       path: '/:pathMatch(.*)*',
