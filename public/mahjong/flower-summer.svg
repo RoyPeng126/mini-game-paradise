@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 112">
+  <defs><linearGradient id="ivory" x2="1" y2="1"><stop stop-color="#fffef5"/><stop offset="1" stop-color="#e8e1cf"/></linearGradient></defs>
+  <path d="M12 8h60l6 7v84l-8 10H12z" fill="#08763d"/>
+  <path d="M9 5h61l4 5v90l-7 7H9L3 101V17z" fill="url(#ivory)" stroke="#101713" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M10 12h56" stroke="#fff" stroke-width="2" opacity=".8"/>
+  <text x="12" y="28" fill="#2463ad" font-family="Arial,sans-serif" font-size="20" font-weight="700">2</text>
+  <text x="47" y="34" fill="#d8482f" font-family="serif" font-size="25" font-weight="700">夏</text>
+  <path d="M40 96V68" stroke="#21864d" stroke-width="3" stroke-linecap="round"/>
+  <path d="M15 91q13-15 27 0-13 8-27 0M39 89q12-14 25 0-12 8-25 0" fill="#38a65a" stroke="#16733d" stroke-width="2"/>
+  <g fill="#ed6257" stroke="#bd3539" stroke-width="1.5">
+    <path d="M40 70q-14-9-15-22 13 2 15 15 2-13 15-15-1 13-15 22z"/>
+    <path d="M40 72q-18 0-22-11 14-4 22 5 8-9 22-5-4 11-22 11z"/>
+  </g>
+  <circle cx="40" cy="66" r="4" fill="#efbd39"/>
+  <path d="M19 45q8-5 14 1-7 5-14-1M58 43q-7-4-12 2 7 4 12-2" fill="#2f9250"/>
+</svg>

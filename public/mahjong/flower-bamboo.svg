@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 112">
+  <defs><linearGradient id="ivory" x2="1" y2="1"><stop stop-color="#fffef5"/><stop offset="1" stop-color="#e8e1cf"/></linearGradient></defs>
+  <path d="M12 8h60l6 7v84l-8 10H12z" fill="#08763d"/>
+  <path d="M9 5h61l4 5v90l-7 7H9L3 101V17z" fill="url(#ivory)" stroke="#101713" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M10 12h56" stroke="#fff" stroke-width="2" opacity=".8"/>
+  <text x="12" y="28" fill="#2463ad" font-family="Arial,sans-serif" font-size="20" font-weight="700">4</text>
+  <text x="47" y="34" fill="#2463ad" font-family="serif" font-size="25" font-weight="700">竹</text>
+  <g fill="none" stroke="#16834a" stroke-width="5" stroke-linecap="round">
+    <path d="M30 98L38 43M48 96l4-48"/>
+  </g>
+  <g stroke="#0d6538" stroke-width="2"><path d="M32 82h10M34 68h10M36 55h9M47 82h10M49 68h10M50 55h9"/></g>
+  <g fill="#319b55" stroke="#157440" stroke-width="1">
+    <path d="M34 63q-16-13-20-2 10 9 20 2M36 53q-12-14-18-5 7 10 18 5M43 74q15-13 20-2-10 9-20 2M48 59q13-14 19-4-8 10-19 4M46 88q-14-11-18-1 9 8 18 1"/>
+  </g>
+</svg>

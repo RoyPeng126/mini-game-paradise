@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 112">
+  <defs><linearGradient id="ivory" x2="1" y2="1"><stop stop-color="#fffef5"/><stop offset="1" stop-color="#e8e1cf"/></linearGradient></defs>
+  <path d="M12 8h60l6 7v84l-8 10H12z" fill="#08763d"/>
+  <path d="M9 5h61l4 5v90l-7 7H9L3 101V17z" fill="url(#ivory)" stroke="#101713" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M10 12h56" stroke="#fff" stroke-width="2" opacity=".8"/>
+  <text x="12" y="28" fill="#2463ad" font-family="Arial,sans-serif" font-size="20" font-weight="700">4</text>
+  <text x="47" y="34" fill="#d8482f" font-family="serif" font-size="25" font-weight="700">冬</text>
+  <path d="M20 94q18-12 35-46M30 79l-8-11M40 69l12-8M49 56l-4-10" fill="none" stroke="#7c552f" stroke-width="3" stroke-linecap="round"/>
+  <g fill="#e24c46" stroke="#ba3033" stroke-width="1">
+    <g transform="translate(22 67)"><circle cy="-5" r="4"/><circle cx="5" r="4"/><circle cy="5" r="4"/><circle cx="-5" r="4"/><circle r="2" fill="#efbc35"/></g>
+    <g transform="translate(45 59)"><circle cy="-5" r="4"/><circle cx="5" r="4"/><circle cy="5" r="4"/><circle cx="-5" r="4"/><circle r="2" fill="#efbc35"/></g>
+    <g transform="translate(52 44)"><circle cy="-4" r="3.5"/><circle cx="4" r="3.5"/><circle cy="4" r="3.5"/><circle cx="-4" r="3.5"/><circle r="2" fill="#efbc35"/></g>
+  </g>
+  <g stroke="#4d9dc6" stroke-width="1.5"><path d="M62 76v12M57 79l10 6M67 79l-10 6"/></g>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 112">
+  <defs><linearGradient id="ivory" x2="1" y2="1"><stop stop-color="#fffef5"/><stop offset="1" stop-color="#e8e1cf"/></linearGradient></defs>
+  <path d="M12 8h60l6 7v84l-8 10H12z" fill="#08763d"/>
+  <path d="M9 5h61l4 5v90l-7 7H9L3 101V17z" fill="url(#ivory)" stroke="#101713" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M10 12h56" stroke="#fff" stroke-width="2" opacity=".8"/>
+  <text x="12" y="28" fill="#2463ad" font-family="Arial,sans-serif" font-size="20" font-weight="700">1</text>
+  <text x="47" y="34" fill="#2463ad" font-family="serif" font-size="25" font-weight="700">梅</text>
+  <path d="M17 95q20-20 39-51M30 80l-8-15M39 68l13 7M47 57l-4-12" fill="none" stroke="#78502e" stroke-width="3.2" stroke-linecap="round"/>
+  <g fill="#e3414d" stroke="#b72d3d" stroke-width="1">
+    <g transform="translate(23 68)"><circle cy="-6" r="4.5"/><circle cx="6" cy="-1" r="4.5"/><circle cx="4" cy="6" r="4.5"/><circle cx="-4" cy="6" r="4.5"/><circle cx="-6" cy="-1" r="4.5"/><circle r="2.5" fill="#efbd36"/></g>
+    <g transform="translate(48 57)"><circle cy="-5" r="4"/><circle cx="5" r="4"/><circle cy="5" r="4"/><circle cx="-5" r="4"/><circle r="2.2" fill="#efbd36"/></g>
+    <g transform="translate(55 43)"><circle cy="-4" r="3.4"/><circle cx="4" r="3.4"/><circle cy="4" r="3.4"/><circle cx="-4" r="3.4"/><circle r="2" fill="#efbd36"/></g>
+  </g>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 112">
+  <defs><linearGradient id="ivory" x2="1" y2="1"><stop stop-color="#fffef5"/><stop offset="1" stop-color="#e8e1cf"/></linearGradient></defs>
+  <path d="M12 8h60l6 7v84l-8 10H12z" fill="#08763d"/>
+  <path d="M9 5h61l4 5v90l-7 7H9L3 101V17z" fill="url(#ivory)" stroke="#101713" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M10 12h56" stroke="#fff" stroke-width="2" opacity=".8"/>
+  <text x="12" y="28" fill="#2463ad" font-family="Arial,sans-serif" font-size="20" font-weight="700">3</text>
+  <text x="47" y="34" fill="#d8482f" font-family="serif" font-size="25" font-weight="700">秋</text>
+  <path d="M40 96V72" stroke="#25824a" stroke-width="3"/>
+  <g transform="translate(40 65)" fill="#f1a51e" stroke="#d57916" stroke-width="1.5">
+    <ellipse rx="5" ry="18"/><ellipse rx="5" ry="18" transform="rotate(30)"/><ellipse rx="5" ry="18" transform="rotate(60)"/><ellipse rx="5" ry="18" transform="rotate(90)"/><ellipse rx="5" ry="18" transform="rotate(120)"/><ellipse rx="5" ry="18" transform="rotate(150)"/>
+  </g>
+  <circle cx="40" cy="65" r="6" fill="#cf4935"/>
+  <path d="M39 83q-11-9-19-1 9 8 19 1M43 87q10-9 18-1-9 8-18 1" fill="#489b4a"/>
+  <path d="M18 47q7-10 15-2-4 9-15 2M61 45q-8-8-14 1 6 7 14-1" fill="#d66a2d"/>
+</svg>
