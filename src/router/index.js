@@ -9,6 +9,7 @@ import DinoView from '../views/DinoView.vue'
 import SlotView from '../views/SlotView.vue'
 import MinesweeperView from '../views/MinesweeperView.vue'
 import PathZipView from '../views/PathZipView.vue'
+import PatchGridView from '../views/PatchGridView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -62,6 +63,11 @@ const router = createRouter({
       path: '/pathzip',
       name: 'pathzip',
       component: PathZipView,
+    },
+    {
+      path: '/patchgrid',
+      name: 'patchgrid',
+      component: PatchGridView,
     },
     {
       path: '/:pathMatch(.*)*',

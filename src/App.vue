@@ -1,5 +1,6 @@
 <script setup>
 import Navbar from './components/Navbar.vue'
+import AppFooter from './components/AppFooter.vue'
 </script>
 
 <template>
@@ -12,9 +13,6 @@ import Navbar from './components/Navbar.vue'
         </Transition>
       </RouterView>
     </main>
-    <footer class="site-footer">
-      <span>Mini Game Paradise</span>
-      <span>Built with Vue 3</span>
-    </footer>
+    <AppFooter />
   </div>
 </template>

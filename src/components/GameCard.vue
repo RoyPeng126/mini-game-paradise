@@ -1,5 +1,9 @@
 <script setup>
 defineProps({
+  id: {
+    type: String,
+    required: true,
+  },
   title: {
     type: String,
     required: true,
@@ -25,7 +29,13 @@ defineProps({
     type: String,
     default: '✦',
   },
+  playCount: {
+    type: Number,
+    default: 0,
+  },
 })
+
+defineEmits(['play'])
 </script>
 
 <template>
@@ -44,6 +54,13 @@ defineProps({
     <div class="game-card__content">
       <h2>{{ title }}</h2>
       <p>{{ description }}</p>
+      <span class="game-play-count">
+        {{
+          playCount > 0
+            ? `Played locally: ${playCount}`
+            : 'Not played yet'
+        }}
+      </span>
     </div>
 
     <RouterLink
@@ -51,6 +68,7 @@ defineProps({
       class="button button--card"
       :to="route"
       :aria-label="`Play ${title}`"
+      @click="$emit('play', id)"
     >
       Play now
       <span aria-hidden="true">→</span>

@@ -116,6 +116,9 @@ onBeforeUnmount(() => {
           <span class="game-kicker">Endless runner</span>
           <h1>Dino Runner</h1>
           <p>Jump over obstacles and survive as the speed gets faster.</p>
+          <p class="dino-dragon-note">
+            Flying dragons appear after 200 points.
+          </p>
         </div>
         <ScoreBoard :score="displayScore" :best-score="bestScore" />
       </header>
@@ -160,9 +163,27 @@ onBeforeUnmount(() => {
           v-for="obstacle in gameState.obstacles"
           :key="obstacle.id"
           class="dino-obstacle"
+          :class="[
+            obstacle.type === 'flyingDragon'
+              ? 'dino-obstacle-flying-dragon'
+              : 'dino-obstacle-cactus',
+            obstacle.type === 'flyingDragon'
+              ? `dino-dragon-${obstacle.variant}`
+              : `dino-cactus-${obstacle.variant}`,
+          ]"
           :style="entityStyle(obstacle)"
-          aria-label="Cactus obstacle"
-        ></div>
+          :aria-label="
+            obstacle.type === 'flyingDragon'
+              ? `${obstacle.variant} Flying Dragon obstacle`
+              : 'Cactus obstacle'
+          "
+        >
+          <template v-if="obstacle.type === 'flyingDragon'">
+            <span class="dino-dragon-body"></span>
+            <span class="dino-dragon-wing dino-dragon-flap"></span>
+            <span class="dino-dragon-tail"></span>
+          </template>
+        </div>
 
         <div v-if="gameState.status === 'ready'" class="dino-ready-message">
           <span>Ready?</span>
