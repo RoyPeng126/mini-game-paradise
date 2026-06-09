@@ -5,6 +5,7 @@ import {
   NUMBERED_SUITS,
   autoComputerClaim,
   calculateMahjongScore,
+  canClaimWin,
   canRobKong,
   canChi,
   canConcealedKong,
@@ -13,6 +14,7 @@ import {
   canWin,
   canWinWithMelds,
   claimDiscard,
+  claimWin,
   countCompletedMelds,
   createInitialMahjongGame,
   createMahjongDeck,
@@ -22,7 +24,9 @@ import {
   discardTile,
   drawAfterKong,
   drawTile,
+  enterClaimPhase,
   getAvailableAddedKongs,
+  getAvailableClaims,
   getAvailableConcealedKongs,
   getChiOptions,
   getNextPlayerIndex,
@@ -152,6 +156,41 @@ function claimTestGame({
 
 function discardForClaim(game) {
   return discardTile(game, 0, game.players[0].hand.length - 1).gameState
+}
+
+function discardWinGame({
+  winnerIndex = 0,
+  discardedBy = 3,
+  additionalHands = {},
+} = {}) {
+  const game = createInitialMahjongGame(createMahjongDeck())
+  const completeHand = winningHand()
+  const winningTileIndex = completeHand.findIndex(
+    (handTile) => handTile.suit === 'dots' && handTile.rank === 7,
+  )
+  const [winningTile] = completeHand.splice(winningTileIndex, 1)
+
+  game.currentPlayer = discardedBy
+  game.phase = 'waitingDiscard'
+  game.players.forEach((player) => {
+    player.hand = []
+    player.discardPile = []
+    player.melds = []
+  })
+  game.players[winnerIndex].hand = completeHand
+  for (const [playerIndex, hand] of Object.entries(additionalHands)) {
+    game.players[Number(playerIndex)].hand = hand
+  }
+  game.players[discardedBy].hand = [
+    ...repeatedHand('characters', 9, 16),
+    { ...winningTile, id: `${winningTile.id}-discard` },
+  ]
+
+  return discardTile(
+    game,
+    discardedBy,
+    game.players[discardedBy].hand.length - 1,
+  ).gameState
 }
 
 function kongTurnGame() {
@@ -762,6 +801,122 @@ test('discardTile enters claim phase when another player can claim', () => {
   assert.deepEqual(result.claimPhase.eligiblePlayers, [2])
 })
 
+test('canClaimWin accepts another player discard that completes the hand', () => {
+  const claimState = discardWinGame()
+
+  assert.equal(canClaimWin(claimState, 0), true)
+  assert.equal(getAvailableClaims(claimState, 0).canWin, true)
+  assert.equal(claimState.phase, 'claim')
+  assert.deepEqual(claimState.claimPhase.winClaims, [
+    { playerIndex: 0, claimType: 'win' },
+  ])
+  assert.match(claimState.message, /You can win/)
+})
+
+test('canClaimWin rejects the discarder and an incomplete hand', () => {
+  const claimState = discardWinGame()
+
+  assert.equal(canClaimWin(claimState, 3), false)
+  claimState.players[0].hand = repeatedHand('bamboo', 1, 16)
+  assert.equal(canClaimWin(claimState, 0), false)
+})
+
+test('enterClaimPhase includes every player whose hand can claim win', () => {
+  const game = createInitialMahjongGame(createMahjongDeck())
+  const completeHand = winningHand()
+  const winningTile = completeHand.find(
+    (handTile) => handTile.suit === 'dots' && handTile.rank === 7,
+  )
+  const waitingHand = completeHand.filter(
+    (handTile) => handTile.id !== winningTile.id,
+  )
+  game.players[0].hand = waitingHand
+  game.players[1].hand = waitingHand.map((handTile, index) => ({
+    ...handTile,
+    id: `${handTile.id}-second-${index}`,
+  }))
+  game.players[2].hand = []
+  game.players[3].hand = []
+
+  const result = enterClaimPhase(game, winningTile, 3).gameState
+
+  assert.deepEqual(result.claimPhase.winClaims, [
+    { playerIndex: 0, claimType: 'win' },
+    { playerIndex: 1, claimType: 'win' },
+  ])
+  assert.equal(result.claimPhase.eligiblePlayers.includes(0), true)
+  assert.equal(result.claimPhase.eligiblePlayers.includes(1), true)
+})
+
+test('claimWin completes a discard win and clears the claim phase', () => {
+  const claimState = discardWinGame()
+  const result = claimWin(claimState, 0)
+
+  assert.equal(result.success, true)
+  assert.equal(result.gameState.status, 'win')
+  assert.equal(result.gameState.phase, 'ended')
+  assert.equal(result.gameState.winner.id, 0)
+  assert.equal(result.gameState.winContext.type, 'discard')
+  assert.equal(result.gameState.winContext.fromPlayer, 3)
+  assert.equal(result.gameState.scoringResult.winnerIndex, 0)
+  assert.equal(result.gameState.claimPhase.active, false)
+  assert.deepEqual(result.gameState.claimPhase.winClaims, [])
+  assert.deepEqual(result.gameState.lastDiscard, {
+    tile: null,
+    fromPlayer: null,
+  })
+  assert.equal(
+    result.gameState.scoringResult.payments[3].delta,
+    -(result.gameState.scoringResult.points * 3),
+  )
+  assert.match(result.message, /wins by discard/)
+})
+
+test('autoComputerClaim always takes a winning claim before pong', () => {
+  const claimState = discardWinGame({
+    winnerIndex: 1,
+    discardedBy: 0,
+    additionalHands: {
+      2: [
+        tile('dots', 7, 20),
+        tile('dots', 7, 21),
+      ],
+    },
+  })
+  const pongResult = claimDiscard(claimState, 2, 'pong')
+  const result = autoComputerClaim(claimState)
+
+  assert.equal(pongResult.success, false)
+  assert.match(pongResult.message, /win claim has priority/i)
+  assert.equal(result.success, true)
+  assert.equal(result.gameState.status, 'win')
+  assert.equal(result.gameState.winner.id, 1)
+  assert.equal(result.gameState.players[2].melds.length, 0)
+})
+
+test('autoComputerClaim always takes a winning claim before kong', () => {
+  const claimState = discardWinGame({
+    winnerIndex: 1,
+    discardedBy: 0,
+    additionalHands: {
+      2: [
+        tile('dots', 7, 20),
+        tile('dots', 7, 21),
+        tile('dots', 7, 22),
+      ],
+    },
+  })
+  const kongResult = claimDiscard(claimState, 2, 'kong')
+  const result = autoComputerClaim(claimState)
+
+  assert.equal(kongResult.success, false)
+  assert.match(kongResult.message, /win claim has priority/i)
+  assert.equal(result.success, true)
+  assert.equal(result.gameState.status, 'win')
+  assert.equal(result.gameState.winner.id, 1)
+  assert.equal(result.gameState.players[2].melds.length, 0)
+})
+
 test('claiming pong creates a pong meld', () => {
   const game = claimTestGame({
     claimantIndex: 2,
@@ -1012,6 +1167,83 @@ test('declareConcealedKong removes four tiles and waits for replacement draw', (
     kongType: 'concealed',
   })
   assert.equal(result.gameState.robKongPhase.active, false)
+})
+
+test('waitingDraw allows a concealed kong of four green dragons', () => {
+  const game = kongTurnGame()
+  game.phase = 'waitingDraw'
+  game.players[0].hand = [
+    tile('dragon', 'green', 0),
+    tile('dragon', 'green', 1),
+    tile('dragon', 'green', 2),
+    tile('dragon', 'green', 3),
+    ...repeatedHand('characters', 2, 12),
+  ]
+
+  const options = getAvailableConcealedKongs(game.players[0].hand)
+  const greenDragonOption = options.find(
+    (option) => option.tileKey === 'dragon-green',
+  )
+  assert.ok(greenDragonOption)
+  assert.equal(greenDragonOption.tiles.length, 4)
+
+  const result = declareConcealedKong(game, 0, 'dragon-green')
+  const player = result.gameState.players[0]
+
+  assert.equal(result.success, true)
+  assert.equal(player.hand.length, 12)
+  assert.equal(player.hand.some((handTile) => getTileKey(handTile) === 'dragon-green'), false)
+  assert.equal(player.melds.length, 1)
+  assert.equal(player.melds[0].type, 'kong')
+  assert.equal(player.melds[0].kongType, 'concealed')
+  assert.equal(result.gameState.phase, 'waitingKongDraw')
+  assert.deepEqual(result.gameState.kongDrawPending, {
+    active: true,
+    playerIndex: 0,
+    kongType: 'concealed',
+  })
+  assert.equal(
+    result.message,
+    'Concealed kong declared. Draw a replacement tile.',
+  )
+})
+
+test('waitingDraw concealed kong replacement returns the same player to discard', () => {
+  const game = kongTurnGame()
+  game.phase = 'waitingDraw'
+  game.players[0].hand = [
+    tile('dots', 7, 0),
+    tile('dots', 7, 1),
+    tile('dots', 7, 2),
+    tile('dots', 7, 3),
+    ...repeatedHand('bamboo', 2, 12),
+  ]
+
+  const kongResult = declareConcealedKong(game, 0, 'dots-7')
+  const drawResult = drawAfterKong(kongResult.gameState)
+
+  assert.equal(drawResult.success, true)
+  assert.equal(drawResult.gameState.currentPlayer, 0)
+  assert.equal(drawResult.gameState.players[0].hand.length, 13)
+  assert.equal(drawResult.gameState.phase, 'waitingDiscard')
+  assert.equal(drawResult.gameState.kongDrawPending.active, false)
+})
+
+test('declareConcealedKong rejects flower tiles in waitingDraw', () => {
+  const game = kongTurnGame()
+  game.phase = 'waitingDraw'
+  game.players[0].hand = [
+    tile('flower', 'spring', 0),
+    tile('flower', 'spring', 1),
+    tile('flower', 'spring', 2),
+    tile('flower', 'spring', 3),
+  ]
+
+  const result = declareConcealedKong(game, 0, 'flower-spring')
+
+  assert.equal(result.success, false)
+  assert.equal(result.gameState.players[0].hand.length, 4)
+  assert.equal(result.gameState.players[0].melds.length, 0)
 })
 
 test('drawAfterKong draws a replacement tile and returns to discard phase', () => {

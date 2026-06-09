@@ -183,6 +183,9 @@ export function cloneGameState(gameState) {
           ...gameState.claimPhase,
           eligiblePlayers: [...gameState.claimPhase.eligiblePlayers],
           claims: gameState.claimPhase.claims.map((claim) => ({ ...claim })),
+          winClaims: (gameState.claimPhase.winClaims ?? []).map((claim) => ({
+            ...claim,
+          })),
         }
       : createEmptyClaimPhase(),
     kongDrawPending: gameState.kongDrawPending
@@ -270,6 +273,7 @@ function createEmptyClaimPhase() {
     discardedBy: null,
     eligiblePlayers: [],
     claims: [],
+    winClaims: [],
   }
 }
 
@@ -544,6 +548,27 @@ export function canAddedKong(player) {
   return getAvailableAddedKongs(player).length > 0
 }
 
+export function canClaimWin(gameState, playerIndex) {
+  const discardedTile =
+    gameState.claimPhase?.discardedTile ?? gameState.lastDiscard?.tile
+  const discardedBy =
+    gameState.claimPhase?.discardedBy ?? gameState.lastDiscard?.fromPlayer
+  const player = gameState.players[playerIndex]
+
+  if (
+    !discardedTile ||
+    !player ||
+    playerIndex === discardedBy
+  ) {
+    return false
+  }
+
+  return canWinWithMelds(
+    [...player.hand, discardedTile],
+    player.melds,
+  )
+}
+
 export function getAvailableClaims(gameState, playerIndex) {
   const discardedTile =
     gameState.claimPhase?.discardedTile ?? gameState.lastDiscard?.tile
@@ -557,6 +582,7 @@ export function getAvailableClaims(gameState, playerIndex) {
     playerIndex === discardedBy
   ) {
     return {
+      canWin: false,
       canChi: false,
       chiOptions: [],
       canPong: false,
@@ -566,6 +592,7 @@ export function getAvailableClaims(gameState, playerIndex) {
 
   const chiOptions = getChiOptions(player.hand, discardedTile)
   return {
+    canWin: canClaimWin(gameState, playerIndex),
     canChi:
       playerIndex === getNextPlayerIndex(discardedBy) &&
       chiOptions.length > 0,
@@ -587,15 +614,27 @@ export function enterClaimPhase(gameState, discardedTile, discardedBy) {
     discardedBy,
     eligiblePlayers: [],
     claims: [],
+    winClaims: [],
   }
 
-  nextState.claimPhase.eligiblePlayers = nextState.players
-    .filter((player) => {
-      if (player.id === discardedBy) return false
-      const claims = getAvailableClaims(nextState, player.id)
-      return claims.canChi || claims.canPong || claims.canKong
-    })
-    .map((player) => player.id)
+  const availableByPlayer = nextState.players
+    .filter((player) => player.id !== discardedBy)
+    .map((player) => ({
+      playerIndex: player.id,
+      available: getAvailableClaims(nextState, player.id),
+    }))
+
+  nextState.claimPhase.winClaims = availableByPlayer
+    .filter(({ available }) => available.canWin)
+    .map(({ playerIndex }) => ({ playerIndex, claimType: 'win' }))
+  nextState.claimPhase.eligiblePlayers = availableByPlayer
+    .filter(({ available }) =>
+      available.canWin ||
+      available.canChi ||
+      available.canPong ||
+      available.canKong,
+    )
+    .map(({ playerIndex }) => playerIndex)
 
   if (nextState.claimPhase.eligiblePlayers.length === 0) {
     nextState.claimPhase = createEmptyClaimPhase()
@@ -605,7 +644,11 @@ export function enterClaimPhase(gameState, discardedTile, discardedBy) {
     nextState.message = `${nextState.players[discardedBy].name} discarded ${discardedTile.label}. Next player draws.`
   } else {
     nextState.phase = 'claim'
-    nextState.message = 'Players may claim the discarded tile.'
+    nextState.message = nextState.claimPhase.winClaims.some(
+      (claim) => claim.playerIndex === 0,
+    )
+      ? 'You can win with the discarded tile.'
+      : 'Players may claim the discarded tile.'
   }
 
   return { gameState: nextState, success: true, message: nextState.message }
@@ -650,6 +693,45 @@ function clearClaimState(gameState) {
   }
 }
 
+export function claimWin(gameState, playerIndex) {
+  if (
+    gameState.status !== 'playing' ||
+    !gameState.claimPhase?.active ||
+    !gameState.claimPhase.eligiblePlayers.includes(playerIndex) ||
+    !canClaimWin(gameState, playerIndex)
+  ) {
+    return { gameState, success: false, message: 'Win claim is not available' }
+  }
+
+  const discardedTile = gameState.claimPhase.discardedTile
+  const discardedBy = gameState.claimPhase.discardedBy
+  let nextState = cloneGameState(gameState)
+  nextState.players[playerIndex].hand = sortHand([
+    ...nextState.players[playerIndex].hand,
+    discardedTile,
+  ])
+
+  const sourceDiscardPile = nextState.players[discardedBy].discardPile
+  const sourceTile = sourceDiscardPile[sourceDiscardPile.length - 1]
+  if (isSameTile(sourceTile, discardedTile)) sourceDiscardPile.pop()
+
+  nextState = clearClaimState(nextState)
+  nextState.currentPlayer = playerIndex
+  nextState.phase = 'ended'
+  const winContext = {
+    type: 'discard',
+    fromPlayer: discardedBy,
+    winningTile: discardedTile,
+    isKongDraw: false,
+    isRobKong: false,
+    isSelfDraw: false,
+  }
+  const result = completeWin(nextState, playerIndex, winContext)
+  result.gameState.message = `${result.gameState.players[playerIndex].name} wins by discard.`
+  result.message = result.gameState.message
+  return result
+}
+
 export function claimDiscard(
   gameState,
   playerIndex,
@@ -662,6 +744,21 @@ export function claimDiscard(
     !gameState.claimPhase.eligiblePlayers.includes(playerIndex)
   ) {
     return { gameState, success: false, message: 'Claim is not available' }
+  }
+
+  const higherPriorityWin = (gameState.claimPhase.winClaims ?? []).some(
+    (claim) =>
+      claim.playerIndex !== playerIndex &&
+      !gameState.claimPhase.claims.some(
+        (response) => response.playerIndex === claim.playerIndex,
+      ),
+  )
+  if (higherPriorityWin) {
+    return {
+      gameState,
+      success: false,
+      message: 'A win claim has priority over this claim',
+    }
   }
 
   const available = getAvailableClaims(gameState, playerIndex)
@@ -816,19 +913,19 @@ export function completeKong(gameState, playerIndex, kongType) {
 export function declareConcealedKong(gameState, playerIndex, tileKey) {
   if (
     gameState.status !== 'playing' ||
-    gameState.phase !== 'waitingDiscard' ||
+    !['waitingDraw', 'waitingDiscard'].includes(gameState.phase) ||
     gameState.currentPlayer !== playerIndex
   ) {
     return { gameState, success: false, message: 'Concealed kong is not available' }
   }
 
-  const matchingTiles = findTilesByKey(
+  const kongOption = getAvailableConcealedKongs(
     gameState.players[playerIndex].hand,
-    tileKey,
-  ).slice(0, 4)
-  if (matchingTiles.length !== 4) {
+  ).find((option) => option.tileKey === tileKey)
+  if (!kongOption) {
     return { gameState, success: false, message: 'Four matching tiles are required' }
   }
+  const matchingTiles = kongOption.tiles.slice(0, 4)
 
   let nextState = cloneGameState(gameState)
   nextState.players[playerIndex].hand = removeTilesFromHand(
@@ -1064,11 +1161,15 @@ export function autoComputerClaim(gameState) {
   const humanResponded = gameState.claimPhase.claims.some(
     (claim) => claim.playerIndex === 0,
   )
-  if (humanIsEligible && !humanResponded) {
+  const humanCanWin =
+    humanIsEligible &&
+    !humanResponded &&
+    getAvailableClaims(gameState, 0).canWin
+  if (humanCanWin) {
     return {
       gameState,
       success: false,
-      message: 'Waiting for your claim decision',
+      message: 'Waiting for your win claim decision',
     }
   }
 
@@ -1083,6 +1184,19 @@ export function autoComputerClaim(gameState) {
     playerIndex,
     available: getAvailableClaims(gameState, playerIndex),
   }))
+
+  const winCandidate = candidates.find(({ available }) => available.canWin)
+  if (winCandidate) {
+    return claimWin(gameState, winCandidate.playerIndex)
+  }
+
+  if (humanIsEligible && !humanResponded) {
+    return {
+      gameState,
+      success: false,
+      message: 'Waiting for your claim decision',
+    }
+  }
 
   const kongCandidate = candidates.find(
     ({ available }) => available.canKong && Math.random() < 0.2,

@@ -7,6 +7,7 @@ import {
   assignSeats,
   calculateMahjongScore,
   claimDiscard,
+  claimWin,
   createSetupMahjongGame,
   declareAddedKong,
   declareConcealedKong,
@@ -58,6 +59,7 @@ const phaseLabel = computed(() =>
 const humanClaims = computed(() => {
   if (!gameState.value?.claimPhase?.active) {
     return {
+      canWin: false,
       canChi: false,
       chiOptions: [],
       canPong: false,
@@ -98,15 +100,21 @@ const selectedTile = computed(() =>
     : humanPlayer.value?.hand[selectedTileIndex.value] ?? null,
 )
 const concealedKongOptions = computed(() => {
+  const phase = gameState.value?.phase
   if (
     gameState.value?.status !== 'playing' ||
     gameState.value.currentPlayer !== 0 ||
-    gameState.value.phase !== 'waitingDiscard' ||
-    !selectedTile.value
+    !['waitingDraw', 'waitingDiscard'].includes(phase) ||
+    computerRunning.value
   ) {
     return []
   }
-  return getAvailableConcealedKongs(humanPlayer.value.hand).filter((option) =>
+
+  const options = getAvailableConcealedKongs(humanPlayer.value.hand)
+  if (phase === 'waitingDraw') return options
+  if (!selectedTile.value) return []
+
+  return options.filter((option) =>
     option.tiles.some((tile) => tile.id === selectedTile.value.id),
   )
 })
@@ -235,6 +243,11 @@ async function humanDiscard() {
 function humanClaim(claimType, chiOption = null) {
   if (!humanCanClaim.value) return
   applyResult(claimDiscard(gameState.value, 0, claimType, chiOption))
+}
+
+function humanClaimWin() {
+  if (!humanCanClaim.value || !humanClaims.value.canWin) return
+  applyResult(claimWin(gameState.value, 0))
 }
 
 function humanConcealedKong(tileKey) {
@@ -531,8 +544,18 @@ onBeforeUnmount(() => {
         {{ gameState.message }}
       </div>
 
-      <section v-if="humanCanClaim" class="mahjong-claim-bar" aria-live="polite">
-        <div class="mahjong-claim-tile">
+      <section
+        v-if="humanCanClaim"
+        class="mahjong-claim-bar"
+        :class="{
+          'mahjong-claim-win mahjong-claim-priority': humanClaims.canWin,
+        }"
+        aria-live="polite"
+      >
+        <div
+          class="mahjong-claim-tile"
+          :class="{ 'mahjong-winning-tile': humanClaims.canWin }"
+        >
           <span>Claim Tile</span>
           <div class="mahjong-claim-tile__image">
             <img
@@ -545,6 +568,14 @@ onBeforeUnmount(() => {
 
         <div class="mahjong-claim-content">
           <div class="mahjong-claim-actions">
+            <button
+              v-if="humanClaims.canWin"
+              class="button mahjong-win-claim-button"
+              type="button"
+              @click="humanClaimWin"
+            >
+              Win by Discard
+            </button>
             <button
               class="button mahjong-claim-button"
               type="button"

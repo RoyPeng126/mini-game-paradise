@@ -2170,11 +2170,32 @@ main {
     0 0 28px rgba(224, 175, 92, 0.12);
 }
 
+.mahjong-claim-win {
+  border-color: rgba(255, 199, 84, 0.9);
+  background:
+    linear-gradient(135deg, rgba(160, 28, 28, 0.32), transparent 58%),
+    #1d130d;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 226, 145, 0.12),
+    0 0 30px rgba(234, 67, 53, 0.2);
+}
+
+.mahjong-claim-priority {
+  border-width: 2px;
+}
+
 .mahjong-claim-tile {
   display: flex;
   align-items: center;
   gap: 10px;
   flex: 0 0 auto;
+}
+
+.mahjong-winning-tile .mahjong-claim-tile__image {
+  outline: 2px solid rgba(255, 208, 91, 0.9);
+  box-shadow:
+    0 0 18px rgba(255, 193, 59, 0.45),
+    0 6px 12px rgba(0, 0, 0, 0.3);
 }
 
 .mahjong-claim-tile > span {
@@ -2214,6 +2235,25 @@ main {
   border-radius: 8px;
   background: rgba(224, 175, 92, 0.12);
   font-size: 0.74rem;
+}
+
+.mahjong-win-claim-button {
+  min-width: 148px;
+  min-height: 42px;
+  border: 1px solid #ffd978;
+  border-radius: 9px;
+  color: #2b1606;
+  background: linear-gradient(145deg, #ffe49a, #e8a72f 62%, #c9412f);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 0 18px rgba(236, 75, 49, 0.35);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.mahjong-win-claim-button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
 }
 
 .mahjong-claim-button:hover:not(:disabled) {
@@ -4746,6 +4786,12 @@ main {
   .mahjong-claim-button {
     min-width: 58px;
     flex: 1;
+  }
+
+  .mahjong-win-claim-button {
+    width: 100%;
+    min-width: 100%;
+    min-height: 46px;
   }
 
   .mahjong-claim-button--pass {
