@@ -5,15 +5,22 @@ import ScoreBoard from '../../components/ScoreBoard.vue'
 import {
   GAME_RESULTS,
   GAME_STATUS,
+  calculateRoundPayout,
   calculateHandValue,
   createInitialGame,
   playerHit,
   playerStand,
 } from './logic'
 
+const STARTING_CHIPS = 1000
+const BET_INCREMENTS = [100, 500, 1000]
+
 const scoreStore = useScoreStore()
 const gameState = ref(null)
-const score = ref(0)
+const chips = ref(STARTING_CHIPS)
+const selectedBet = ref(100)
+const roundBet = ref(0)
+const roundPayout = ref(0)
 
 const suitSymbols = {
   hearts: '♥',
@@ -24,38 +31,35 @@ const suitSymbols = {
 
 const resultContent = {
   [GAME_RESULTS.PLAYER_WIN]: {
-    eyebrow: 'Round won · +100',
     title: 'You beat the dealer',
     message: 'Your hand is closer to 21.',
   },
   [GAME_RESULTS.DEALER_WIN]: {
-    eyebrow: 'Dealer wins',
     title: 'House takes the round',
     message: 'The dealer finished with the stronger hand.',
   },
   [GAME_RESULTS.PUSH]: {
-    eyebrow: 'Push · +0',
     title: 'It is a tie',
-    message: 'Same value. Your score stays where it is.',
+    message: 'Same value. Your bet is returned.',
   },
   [GAME_RESULTS.PLAYER_BUST]: {
-    eyebrow: 'Bust',
     title: 'Over 21',
     message: 'Your hand went over the limit.',
   },
   [GAME_RESULTS.DEALER_BUST]: {
-    eyebrow: 'Dealer bust · +100',
     title: 'You win the round',
     message: 'The dealer went over 21.',
   },
   [GAME_RESULTS.BLACKJACK]: {
-    eyebrow: 'Natural Blackjack · +150',
     title: 'Blackjack!',
-    message: 'An ace and a ten-value card. Perfect deal.',
+    message: 'Natural Blackjack pays 1.5 times your bet in winnings.',
   },
 }
 
 const bestScore = computed(() => scoreStore.getBestScore('blackjack'))
+const chipsAfterBet = computed(() =>
+  Math.max(chips.value - Number(selectedBet.value || 0), 0),
+)
 const isPlayerTurn = computed(
   () => gameState.value?.status === GAME_STATUS.PLAYER_TURN,
 )
@@ -73,13 +77,19 @@ const dealerValue = computed(() => {
   return calculateHandValue(gameState.value.dealerHand)
 })
 
-function scoreRound(result) {
-  if (result === GAME_RESULTS.BLACKJACK) return 150
-  if ([GAME_RESULTS.PLAYER_WIN, GAME_RESULTS.DEALER_BUST].includes(result)) {
-    return 100
+const resultEyebrow = computed(() => {
+  const result = gameState.value?.result
+  if (result === GAME_RESULTS.BLACKJACK) {
+    return `Blackjack · won ${formatChips(roundBet.value * 1.5)} chips`
   }
-  return 0
-}
+  if ([GAME_RESULTS.PLAYER_WIN, GAME_RESULTS.DEALER_BUST].includes(result)) {
+    return `Round won · won ${formatChips(roundBet.value)} chips`
+  }
+  if (result === GAME_RESULTS.PUSH) {
+    return `Push · ${formatChips(roundBet.value)} chips returned`
+  }
+  return `Round lost · lost ${formatChips(roundBet.value)} chips`
+})
 
 function applyCompletedRound(nextState, previousState = null) {
   const justFinished =
@@ -87,15 +97,55 @@ function applyCompletedRound(nextState, previousState = null) {
     previousState?.status !== GAME_STATUS.FINISHED
 
   if (justFinished) {
-    score.value += scoreRound(nextState.result)
-    scoreStore.updateBestScore('blackjack', score.value)
+    roundPayout.value = calculateRoundPayout(nextState.result, roundBet.value)
+    chips.value += roundPayout.value
+    scoreStore.updateBestScore('blackjack', chips.value)
   }
 
   gameState.value = nextState
 }
 
-function newRound() {
+function startRound() {
+  if (
+    chips.value <= 0 ||
+    selectedBet.value <= 0 ||
+    selectedBet.value > chips.value
+  ) {
+    return
+  }
+
+  roundBet.value = selectedBet.value
+  roundPayout.value = 0
+  chips.value -= roundBet.value
   applyCompletedRound(createInitialGame())
+}
+
+function prepareNextRound() {
+  gameState.value = null
+  roundBet.value = 0
+  roundPayout.value = 0
+
+  if (selectedBet.value > chips.value) {
+    selectedBet.value = chips.value
+  }
+}
+
+function addToBet(amount) {
+  selectedBet.value = Math.min(
+    Math.max(Number(selectedBet.value) || 0, 0) + amount,
+    chips.value,
+  )
+}
+
+function normalizeSelectedBet() {
+  const nextBet = Math.floor(Number(selectedBet.value))
+  selectedBet.value = Number.isFinite(nextBet)
+    ? Math.min(Math.max(nextBet, 0), chips.value)
+    : 0
+}
+
+function setAllIn() {
+  selectedBet.value = chips.value
 }
 
 function hit() {
@@ -108,8 +158,18 @@ function stand() {
   applyCompletedRound(playerStand(gameState.value), gameState.value)
 }
 
-function resetScore() {
-  score.value = 0
+function resetChips() {
+  if (chips.value !== 0) return
+  chips.value = STARTING_CHIPS
+  selectedBet.value = 100
+  prepareNextRound()
+  scoreStore.updateBestScore('blackjack', chips.value)
+}
+
+function formatChips(value) {
+  return value.toLocaleString(undefined, {
+    maximumFractionDigits: 1,
+  })
 }
 
 function cardColorClass(card) {
@@ -118,7 +178,7 @@ function cardColorClass(card) {
 
 onMounted(() => {
   scoreStore.loadScores()
-  newRound()
+  scoreStore.updateBestScore('blackjack', chips.value)
 })
 </script>
 
@@ -129,26 +189,133 @@ onMounted(() => {
         <span aria-hidden="true">←</span>
         Back to Home
       </RouterLink>
-      <button class="blackjack-reset" type="button" @click="resetScore">
-        Reset Score
+      <button
+        v-if="chips === 0"
+        class="blackjack-reset"
+        type="button"
+        @click="resetChips"
+      >
+        Reset Chips
       </button>
     </div>
 
-    <section v-if="gameState" class="blackjack">
+    <section class="blackjack">
       <header class="blackjack__header">
         <div>
           <span class="game-kicker">Casino classic</span>
           <h1>Blackjack</h1>
           <p>Beat the dealer without going over 21.</p>
         </div>
-        <ScoreBoard :score="score" :best-score="bestScore" />
+        <ScoreBoard
+          :score="chips"
+          :best-score="bestScore"
+          score-label="Chips"
+          best-label="Highest chips"
+          aria-label="Blackjack virtual chips"
+        />
       </header>
 
       <div class="blackjack-table">
         <div class="table-light table-light--left"></div>
         <div class="table-light table-light--right"></div>
 
-        <section class="hand-area" aria-labelledby="dealer-heading">
+        <div class="virtual-chips-notice">
+          Virtual chips only. No real money.
+        </div>
+
+        <section
+          v-if="!gameState"
+          class="bet-panel"
+          aria-labelledby="bet-heading"
+        >
+          <template v-if="chips > 0">
+            <span class="hand-heading__role">Before the deal</span>
+            <h2 id="bet-heading">Choose your bet</h2>
+            <p>Select how many chips to play this round.</p>
+
+            <div class="bet-builder">
+              <span class="bet-builder__label">Quick add</span>
+              <div class="bet-increments" aria-label="Quickly add to bet">
+                <button
+                  v-for="amount in BET_INCREMENTS"
+                  :key="amount"
+                  class="bet-increment"
+                  type="button"
+                  :disabled="selectedBet >= chips"
+                  @click="addToBet(amount)"
+                >
+                  <span aria-hidden="true">+</span>{{ formatChips(amount) }}
+                </button>
+              </div>
+
+              <span class="bet-builder__label">Your bet</span>
+              <div class="bet-custom">
+                <label class="bet-input">
+                  <span>Chips</span>
+                  <input
+                    v-model.number="selectedBet"
+                    type="number"
+                    inputmode="numeric"
+                    min="1"
+                    :max="chips"
+                    step="1"
+                    aria-label="Custom bet in chips"
+                    @change="normalizeSelectedBet"
+                  />
+                </label>
+                <button
+                  class="bet-all-in"
+                  :class="{ 'bet-all-in--selected': selectedBet === chips }"
+                  type="button"
+                  @click="setAllIn"
+                >
+                  All in
+                  <small>{{ formatChips(chips) }} chips</small>
+                </button>
+              </div>
+            </div>
+
+            <div class="bet-summary" aria-live="polite">
+              <span>Bet</span>
+              <strong>{{ formatChips(selectedBet || 0) }} chips</strong>
+              <small>{{ formatChips(chipsAfterBet) }} chips remain after deal</small>
+            </div>
+
+            <button
+              class="button button--primary bet-deal-button"
+              type="button"
+              :disabled="selectedBet <= 0 || selectedBet > chips"
+              @click="startRound"
+            >
+              Deal with {{ formatChips(selectedBet || 0) }} chips
+              <span aria-hidden="true">→</span>
+            </button>
+          </template>
+
+          <template v-else>
+            <span class="hand-heading__role">No chips remaining</span>
+            <h2 id="bet-heading">Ready for a fresh stack?</h2>
+            <p>
+              Reset to {{ formatChips(STARTING_CHIPS) }} virtual chips to keep
+              playing.
+            </p>
+            <button
+              class="button button--primary bet-deal-button"
+              type="button"
+              @click="resetChips"
+            >
+              Reset Chips
+              <span aria-hidden="true">↻</span>
+            </button>
+          </template>
+        </section>
+
+        <template v-else>
+          <div class="current-bet" aria-label="Current bet">
+            Bet: <strong>{{ formatChips(roundBet) }} chips</strong>
+          </div>
+
+          <section class="hand-area" aria-labelledby="dealer-heading">
           <div class="hand-heading">
             <div>
               <span class="hand-heading__role">House</span>
@@ -184,15 +351,15 @@ onMounted(() => {
               <span v-else class="playing-card__back-mark" aria-hidden="true">21</span>
             </div>
           </div>
-        </section>
+          </section>
 
-        <div class="table-rule">
-          <span></span>
-          Dealer stands on 17
-          <span></span>
-        </div>
+          <div class="table-rule">
+            <span></span>
+            Dealer stands on 17
+            <span></span>
+          </div>
 
-        <section class="hand-area" aria-labelledby="player-heading">
+          <section class="hand-area" aria-labelledby="player-heading">
           <div class="hand-heading">
             <div>
               <span class="hand-heading__role">Your hand</span>
@@ -216,28 +383,54 @@ onMounted(() => {
               </span>
             </div>
           </div>
-        </section>
+          </section>
 
-        <div v-if="isPlayerTurn" class="blackjack-actions">
-          <button class="button blackjack-button blackjack-button--hit" type="button" @click="hit">
-            Hit
-            <span aria-hidden="true">＋</span>
-          </button>
-          <button class="button blackjack-button blackjack-button--stand" type="button" @click="stand">
-            Stand
-            <span aria-hidden="true">■</span>
-          </button>
-        </div>
+          <div v-if="isPlayerTurn" class="blackjack-actions">
+            <button
+              class="button blackjack-button blackjack-button--hit"
+              type="button"
+              @click="hit"
+            >
+              Hit
+              <span aria-hidden="true">＋</span>
+            </button>
+            <button
+              class="button blackjack-button blackjack-button--stand"
+              type="button"
+              @click="stand"
+            >
+              Stand
+              <span aria-hidden="true">■</span>
+            </button>
+          </div>
 
-        <div v-else class="round-result" aria-live="polite">
-          <span>{{ roundResult.eyebrow }}</span>
-          <h2>{{ roundResult.title }}</h2>
-          <p>{{ roundResult.message }}</p>
-          <button class="button button--primary" type="button" @click="newRound">
-            New Round
-            <span aria-hidden="true">→</span>
-          </button>
-        </div>
+          <div v-else class="round-result" aria-live="polite">
+            <span>{{ resultEyebrow }}</span>
+            <h2>{{ roundResult.title }}</h2>
+            <p>{{ roundResult.message }}</p>
+            <p class="round-result__balance">
+              Balance: <strong>{{ formatChips(chips) }} chips</strong>
+            </p>
+            <button
+              v-if="chips > 0"
+              class="button button--primary"
+              type="button"
+              @click="prepareNextRound"
+            >
+              Choose Next Bet
+              <span aria-hidden="true">→</span>
+            </button>
+            <button
+              v-else
+              class="button button--primary"
+              type="button"
+              @click="prepareNextRound"
+            >
+              Continue
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </template>
       </div>
     </section>
   </div>

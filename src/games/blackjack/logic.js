@@ -14,6 +14,21 @@ export const GAME_RESULTS = {
   BLACKJACK: 'blackjack',
 }
 
+export const BLACKJACK_PAYOUT_MULTIPLIER = 2.5
+
+export function calculateRoundPayout(result, bet) {
+  if (result === GAME_RESULTS.BLACKJACK) {
+    return bet * BLACKJACK_PAYOUT_MULTIPLIER
+  }
+
+  if ([GAME_RESULTS.PLAYER_WIN, GAME_RESULTS.DEALER_BUST].includes(result)) {
+    return bet * 2
+  }
+
+  if (result === GAME_RESULTS.PUSH) return bet
+  return 0
+}
+
 export function getCardValue(card) {
   if (card.rank === 'A') return 11
   if (['J', 'Q', 'K'].includes(card.rank)) return 10

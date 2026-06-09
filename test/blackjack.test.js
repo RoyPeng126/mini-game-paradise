@@ -3,6 +3,7 @@ import test from 'node:test'
 import {
   GAME_RESULTS,
   GAME_STATUS,
+  calculateRoundPayout,
   calculateHandValue,
   dealerPlay,
   determineWinner,
@@ -98,4 +99,16 @@ test('natural blackjack beats a regular 21', () => {
   )
 
   assert.equal(determineWinner(state), GAME_RESULTS.BLACKJACK)
+})
+
+test('round payouts return the stake plus the correct winnings', () => {
+  assert.equal(calculateRoundPayout(GAME_RESULTS.PLAYER_WIN, 20), 40)
+  assert.equal(calculateRoundPayout(GAME_RESULTS.DEALER_BUST, 20), 40)
+  assert.equal(calculateRoundPayout(GAME_RESULTS.BLACKJACK, 20), 50)
+  assert.equal(calculateRoundPayout(GAME_RESULTS.PUSH, 20), 20)
+})
+
+test('lost rounds do not return any chips', () => {
+  assert.equal(calculateRoundPayout(GAME_RESULTS.DEALER_WIN, 20), 0)
+  assert.equal(calculateRoundPayout(GAME_RESULTS.PLAYER_BUST, 20), 0)
 })

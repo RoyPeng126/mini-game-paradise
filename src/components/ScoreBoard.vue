@@ -8,17 +8,29 @@ defineProps({
     type: Number,
     required: true,
   },
+  scoreLabel: {
+    type: String,
+    default: 'Score',
+  },
+  bestLabel: {
+    type: String,
+    default: 'Best',
+  },
+  ariaLabel: {
+    type: String,
+    default: 'Game scores',
+  },
 })
 </script>
 
 <template>
-  <div class="scoreboard" aria-label="Game scores">
+  <div class="scoreboard" :aria-label="ariaLabel">
     <div class="score-box">
-      <span>Score</span>
+      <span>{{ scoreLabel }}</span>
       <strong>{{ score.toLocaleString() }}</strong>
     </div>
     <div class="score-box score-box--best">
-      <span>Best</span>
+      <span>{{ bestLabel }}</span>
       <strong>{{ bestScore.toLocaleString() }}</strong>
     </div>
   </div>
