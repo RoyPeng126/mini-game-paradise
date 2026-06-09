@@ -3376,6 +3376,109 @@ main {
   content: '';
 }
 
+.dino-cowboy-hat {
+  position: absolute;
+  z-index: 4;
+  top: -15%;
+  right: -24%;
+  width: 82%;
+  height: 11%;
+  border-radius: 50% 45% 35% 40%;
+  background: #8a542d;
+  box-shadow:
+    inset 0 -2px 0 #4c2c1a,
+    0 2px 0 rgba(0, 0, 0, 0.2);
+  transform: rotate(2deg);
+  transform-origin: center;
+}
+
+.dino-cowboy-hat__crown {
+  position: absolute;
+  right: 18%;
+  bottom: 58%;
+  width: 58%;
+  height: 230%;
+  border-radius: 38% 42% 16% 14%;
+  background:
+    linear-gradient(
+      180deg,
+      #a86d3d 0 56%,
+      #4c2c1a 56% 72%,
+      #754321 72% 100%
+    );
+  box-shadow:
+    inset 3px 0 0 rgba(255, 217, 158, 0.12),
+    inset -3px 0 0 rgba(56, 29, 14, 0.28);
+  transform: skewX(-4deg);
+}
+
+.dino-character__tie {
+  position: absolute;
+  z-index: 3;
+  top: 35%;
+  right: 13%;
+  width: 14%;
+  height: 42%;
+  clip-path: polygon(
+    50% 0,
+    100% 16%,
+    72% 31%,
+    88% 78%,
+    50% 100%,
+    12% 78%,
+    28% 31%,
+    0 16%
+  );
+  background: linear-gradient(90deg, #080a09, #252927 48%, #050606);
+  filter: drop-shadow(1px 2px 0 rgba(0, 0, 0, 0.28));
+  transform: rotate(-4deg);
+  transform-origin: top center;
+}
+
+.dino-character__briefcase {
+  position: absolute;
+  z-index: 4;
+  top: 57%;
+  left: -28%;
+  width: 46%;
+  height: 31%;
+  border: 2px solid #4b2a17;
+  border-radius: 2px;
+  background:
+    linear-gradient(90deg, transparent 47%, #c79348 47% 55%, transparent 55%),
+    linear-gradient(180deg, #a96c38 0 48%, #75411f 48% 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 215, 153, 0.2),
+    2px 3px 0 rgba(0, 0, 0, 0.22);
+  transform: rotate(4deg);
+  transform-origin: top right;
+}
+
+.dino-character__briefcase::before {
+  position: absolute;
+  bottom: 100%;
+  left: 25%;
+  width: 50%;
+  height: 36%;
+  border: 2px solid #4b2a17;
+  border-bottom: 0;
+  border-radius: 3px 3px 0 0;
+  content: '';
+}
+
+.dino-character__briefcase::after {
+  position: absolute;
+  top: -28%;
+  right: -18%;
+  width: 32%;
+  height: 20%;
+  border-radius: 2px;
+  background: #a9c7b0;
+  box-shadow: inset -2px -1px 0 #789b82;
+  content: '';
+  transform: rotate(-12deg);
+}
+
 .dino-character__eye {
   position: absolute;
   z-index: 2;

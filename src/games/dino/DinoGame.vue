@@ -155,6 +155,11 @@ onBeforeUnmount(() => {
           :style="entityStyle(gameState.dino)"
           aria-label="Dino"
         >
+          <span class="dino-cowboy-hat" aria-hidden="true">
+            <span class="dino-cowboy-hat__crown"></span>
+          </span>
+          <span class="dino-character__tie" aria-hidden="true"></span>
+          <span class="dino-character__briefcase" aria-hidden="true"></span>
           <span class="dino-character__eye"></span>
           <span class="dino-character__legs"></span>
         </div>
