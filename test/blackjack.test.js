@@ -3,13 +3,18 @@ import test from 'node:test'
 import {
   GAME_RESULTS,
   GAME_STATUS,
+  canSplitPair,
   calculateRoundPayout,
   calculateHandValue,
+  createSplitHands,
   dealerPlay,
+  determineSplitHandWinner,
   determineWinner,
   getCardValue,
   isBlackjack,
   isBust,
+  isFiveCardCharlie,
+  playerDoubleDown,
   playerHit,
 } from '../src/games/blackjack/logic.js'
 
@@ -111,4 +116,136 @@ test('round payouts return the stake plus the correct winnings', () => {
 test('lost rounds do not return any chips', () => {
   assert.equal(calculateRoundPayout(GAME_RESULTS.DEALER_WIN, 20), 0)
   assert.equal(calculateRoundPayout(GAME_RESULTS.PLAYER_BUST, 20), 0)
+})
+
+test('double down draws exactly one card and finishes the round', () => {
+  const state = game(
+    [card('5'), card('6')],
+    [card('10'), card('7')],
+    [card('10'), card('2')],
+  )
+  const result = playerDoubleDown(state)
+
+  assert.equal(result.playerHand.length, 3)
+  assert.equal(result.deck.length, 1)
+  assert.equal(result.status, GAME_STATUS.FINISHED)
+  assert.equal(result.result, GAME_RESULTS.PLAYER_WIN)
+})
+
+test('double down finishes immediately when the one card causes a bust', () => {
+  const state = game(
+    [card('10'), card('9')],
+    [card('10'), card('7')],
+    [card('5')],
+  )
+  const result = playerDoubleDown(state)
+
+  assert.equal(result.playerHand.length, 3)
+  assert.equal(result.status, GAME_STATUS.FINISHED)
+  assert.equal(result.result, GAME_RESULTS.PLAYER_BUST)
+})
+
+test('double down is unavailable after the player has already hit', () => {
+  const state = game(
+    [card('4'), card('5'), card('2')],
+    [card('10'), card('7')],
+    [card('10')],
+  )
+
+  assert.equal(playerDoubleDown(state), state)
+})
+
+test('only two cards with the same rank can be split', () => {
+  assert.equal(canSplitPair([card('8'), card('8', 'hearts')]), true)
+  assert.equal(canSplitPair([card('10'), card('K')]), false)
+  assert.equal(canSplitPair([card('8'), card('8'), card('2')]), false)
+})
+
+test('splitting deals one new card to each hand', () => {
+  const result = createSplitHands(
+    [card('8'), card('8', 'hearts')],
+    [card('3'), card('K'), card('5')],
+  )
+
+  assert.deepEqual(result.hands[0].map(({ rank }) => rank), ['8', '3'])
+  assert.deepEqual(result.hands[1].map(({ rank }) => rank), ['8', 'K'])
+  assert.equal(result.remainingDeck.length, 1)
+})
+
+test('a split hand totaling 21 is a regular win rather than blackjack', () => {
+  assert.equal(
+    determineSplitHandWinner(
+      [card('A'), card('K')],
+      [card('10'), card('9')],
+    ),
+    GAME_RESULTS.PLAYER_WIN,
+  )
+})
+
+test('dealer natural blackjack beats a split hand totaling 21', () => {
+  assert.equal(
+    determineSplitHandWinner(
+      [card('A'), card('K')],
+      [card('A'), card('Q')],
+    ),
+    GAME_RESULTS.DEALER_WIN,
+  )
+})
+
+test('five cards at 21 or less qualify for Five Card Charlie', () => {
+  assert.equal(
+    isFiveCardCharlie([
+      card('2'),
+      card('3'),
+      card('4'),
+      card('5'),
+      card('6'),
+    ]),
+    true,
+  )
+  assert.equal(
+    isFiveCardCharlie([
+      card('2'),
+      card('3'),
+      card('4'),
+      card('5'),
+      card('8'),
+    ]),
+    false,
+  )
+  assert.equal(
+    isFiveCardCharlie([card('2'), card('3'), card('4'), card('5')]),
+    false,
+  )
+})
+
+test('hitting to five cards without busting immediately wins', () => {
+  const state = game(
+    [card('2'), card('3'), card('4'), card('5')],
+    [card('10'), card('9')],
+    [card('6'), card('K')],
+  )
+  const result = playerHit(state)
+
+  assert.equal(result.playerHand.length, 5)
+  assert.equal(result.status, GAME_STATUS.FINISHED)
+  assert.equal(result.result, GAME_RESULTS.FIVE_CARD_CHARLIE)
+  assert.equal(result.dealerHand.length, 2)
+})
+
+test('Five Card Charlie pays two-to-one winnings plus the returned stake', () => {
+  assert.equal(
+    calculateRoundPayout(GAME_RESULTS.FIVE_CARD_CHARLIE, 20),
+    60,
+  )
+})
+
+test('Five Card Charlie wins a split hand regardless of dealer total', () => {
+  assert.equal(
+    determineSplitHandWinner(
+      [card('2'), card('3'), card('4'), card('5'), card('6')],
+      [card('K'), card('A')],
+    ),
+    GAME_RESULTS.FIVE_CARD_CHARLIE,
+  )
 })
